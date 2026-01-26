@@ -1,0 +1,209 @@
+/* custom.css - Watch Shop Theme */
+
+/* ===== Global Styles ===== */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* ===== Colors & Variables ===== */
+:root {
+    --primary: #0d6efd;          /* Màu xanh dương chính (Bootstrap primary) */
+    --primary-dark: #0b5ed7;
+    --accent: #ff6b35;            /* Màu cam accent nổi bật cho sale, button nổi */
+    --dark: #212529;
+    --light: #f8f9fa;
+    --gray: #6c757d;
+    --success: #198754;
+    --danger: #dc3545;
+    --warning: #ffc107;
+}
+
+/* ===== Navbar ===== */
+.navbar {
+    background-color: white !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    padding: 1rem 0;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--primary) !important;
+}
+
+.navbar-brand i {
+    font-size: 1.6rem;
+    vertical-align: middle;
+}
+
+.nav-link {
+    font-weight: 500;
+    color: var(--dark) !important;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--primary) !important;
+}
+
+/* ===== Buttons ===== */
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+}
+
+.btn-outline-primary {
+    border-color: var(--primary);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-accent {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.btn-accent:hover {
+    background-color: #e55a2d;
+    border-color: #e55a2d;
+}
+
+/* ===== Cards ===== */
+.card {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.card-img-top {
+    object-fit: cover;
+    height: 220px;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.old-price {
+    text-decoration: line-through;
+    color: var(--gray);
+    font-size: 0.95rem;
+    margin-left: 0.5rem;
+}
+
+/* ===== Carousel ===== */
+.carousel-item img {
+    height: 480px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.carousel-caption {
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.carousel-caption h5 {
+    font-size: 2rem;
+    font-weight: 700;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
+}
+
+.carousel-caption p {
+    font-size: 1.2rem;
+}
+
+/* ===== Tables (Admin) ===== */
+.table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: var(--primary);
+    color: white;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.08);
+}
+
+/* ===== Forms ===== */
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+.input-group-text {
+    background-color: #e9ecef;
+}
+
+/* ===== Footer ===== */
+footer {
+    background: var(--dark);
+    color: white;
+    padding: 2.5rem 0;
+    margin-top: 4rem;
+}
+
+footer a {
+    color: #adb5bd;
+    text-decoration: none;
+}
+
+footer a:hover {
+    color: white;
+}
+
+/* ===== Utilities ===== */
+.text-accent { color: var(--accent) !important; }
+.bg-light-gray { background-color: #f1f3f5; }
+.shadow-soft { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+.rounded-xl { border-radius: 16px !important; }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .carousel-item img {
+        height: 320px;
+    }
+    .carousel-caption h5 {
+        font-size: 1.5rem;
+    }
+}

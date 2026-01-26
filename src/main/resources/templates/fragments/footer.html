@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<footer th:fragment="footer" id="footer-contact" class="text-white pt-5 pb-3" style="background-color: #111; border-top: 4px solid #d0021b;">
+    <div class="container">
+        <div class="row g-4 justify-content-between">
+
+            <div class="col-lg-4 col-md-6">
+                <a class="text-decoration-none" href="#">
+                    <h3 class="fw-bold text-white mb-3" style="font-family: 'Playfair Display', serif; letter-spacing: -1px;">
+                        WATCH<span style="color: #d0021b;">STORE</span>
+                    </h3>
+                </a>
+                <p class="text-secondary small lh-lg mb-4">
+                    Tự hào là hệ thống phân phối đồng hồ chính hãng hàng đầu tại Việt Nam. Chúng tôi cam kết mang lại những giá trị đích thực, sự sang trọng và đẳng cấp qua từng chuyển động thời gian.
+                </p>
+                <div class="d-flex gap-3">
+                    <a href="#" class="social-btn"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="social-btn"><i class="bi bi-instagram"></i></a>
+                    <a href="#" class="social-btn"><i class="bi bi-youtube"></i></a>
+                    <a href="#" class="social-btn"><i class="bi bi-tiktok"></i></a>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <h6 class="text-uppercase fw-bold mb-4 text-white border-bottom border-secondary d-inline-block pb-1">Thông tin liên hệ</h6>
+                <ul class="list-unstyled small text-secondary">
+                    <li class="mb-3 d-flex">
+                        <i class="bi bi-geo-alt-fill text-danger me-3 fs-6"></i>
+                        <span>Tầng 5, Tòa nhà Luxury, Quận 1, TP. Hồ Chí Minh</span>
+                    </li>
+                    <li class="mb-3 d-flex">
+                        <i class="bi bi-telephone-fill text-danger me-3 fs-6"></i>
+                        <span>Hotline: <strong class="text-white">1900 888 888</strong></span>
+                    </li>
+                    <li class="mb-3 d-flex">
+                        <i class="bi bi-envelope-fill text-danger me-3 fs-6"></i>
+                        <span>Email: cskh@watchstore.vn</span>
+                    </li>
+                    <li class="d-flex">
+                        <i class="bi bi-clock-fill text-danger me-3 fs-6"></i>
+                        <span>Giờ mở cửa: 8:00 - 22:00 (Tất cả các ngày)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <h6 class="text-uppercase fw-bold mb-4 text-white border-bottom border-secondary d-inline-block pb-1">Hỗ trợ</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-2"><a href="#" class="footer-link">Hướng dẫn mua hàng</a></li>
+                    <li class="mb-2"><a href="#" class="footer-link">Chính sách đổi trả</a></li>
+                    <li class="mb-2"><a href="#" class="footer-link">Chính sách bảo hành</a></li>
+                    <li class="mb-2"><a href="#" class="footer-link">Kiểm tra đơn hàng</a></li>
+                    <li class="mb-2"><a href="#" class="footer-link">Câu hỏi thường gặp</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <h6 class="text-uppercase fw-bold mb-4 text-white border-bottom border-secondary d-inline-block pb-1">Nhận tin khuyến mãi</h6>
+                <p class="text-secondary small">Đăng ký ngay để nhận mã giảm giá <span class="text-white fw-bold">10%</span> và thông tin các bộ sưu tập mới nhất.</p>
+                <form action="#">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control bg-dark border-secondary text-white shadow-none" placeholder="Email của bạn..." style="font-size: 0.9rem;">
+                        <button class="btn btn-danger" type="button"><i class="bi bi-send-fill"></i></button>
+                    </div>
+                </form>
+                <div class="mt-4">
+                    <p class="text-secondary small mb-2">Thanh toán an toàn:</p>
+                    <div class="d-flex gap-2 opacity-75">
+                        <i class="bi bi-credit-card-2-front fs-4"></i>
+                        <i class="bi bi-paypal fs-4"></i>
+                        <i class="bi bi-bank fs-4"></i>
+                        <i class="bi bi-qr-code fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="border-secondary opacity-25 my-4">
+
+        <div class="row align-items-center small text-secondary">
+            <div class="col-md-6 text-center text-md-start">
+                &copy; 2026 <strong>WatchStore</strong>. All rights reserved. Designed for Luxury.
+            </div>
+            <div class="col-md-6 text-center text-md-end mt-2 mt-md-0">
+                <a href="#" class="text-secondary text-decoration-none me-3 hover-white">Điều khoản</a>
+                <a href="#" class="text-secondary text-decoration-none hover-white">Bảo mật</a>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .footer-link {
+            color: #adb5bd; text-decoration: none; transition: all 0.2s;
+            display: block; position: relative;
+        }
+        .footer-link:hover {
+            color: #d0021b; transform: translateX(5px);
+        }
+        .social-btn {
+            width: 36px; height: 36px;
+            background: #222; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; text-decoration: none; transition: 0.3s;
+        }
+        .social-btn:hover { background: #d0021b; color: #fff; transform: translateY(-3px); }
+        .hover-white:hover { color: #fff !important; }
+
+        /* Hiệu ứng mượt khi bấm Liên hệ */
+        html { scroll-behavior: smooth; }
+    </style>
+</footer>
+</html>

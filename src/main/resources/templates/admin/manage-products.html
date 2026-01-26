@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head}"></head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/header :: admin-sidebar}"></div>
+
+<div style="margin-left: 280px;">
+    <div class="container-fluid p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-dark">Quản lý sản phẩm</h3>
+            <button class="btn btn-primary fw-bold shadow-sm rounded-pill px-4"
+                    data-bs-toggle="modal" data-bs-target="#productModal" onclick="clearForm()">
+                <i class="bi bi-plus-lg me-2"></i>Thêm Mới
+            </button>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary">
+                    <tr>
+                        <th class="ps-4">Sản phẩm</th>
+                        <th>Thông tin chi tiết</th>
+                        <th>Giá bán</th>
+                        <th>Kho hàng</th>
+                        <th class="text-end pe-4">Hành động</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="p : ${products}">
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <img th:src="${p.imageUrl != null && p.imageUrl.startsWith('http') ? p.imageUrl : '/images/' + p.imageUrl}"
+                                     class="rounded-3 border bg-white"
+                                     style="width: 50px; height: 50px; object-fit: contain;" alt="img"
+                                     onerror="this.src='https://via.placeholder.com/50'">
+                                <div class="ms-3">
+                                    <h6 class="fw-bold mb-0 text-dark" th:text="${p.name}">Tên SP</h6>
+                                    <small class="text-muted" th:text="'Mã: ' + ${p.code != null ? p.code : '---'}">Code</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column small">
+                                <span class="badge bg-primary bg-opacity-10 text-primary mb-1 align-self-start"
+                                      th:text="${p.category != null ? p.category.name : 'Chưa phân loại'}">Category</span>
+                                <span class="text-muted fw-bold">Hãng: [[${p.brand}]]</span>
+                            </div>
+                        </td>
+                        <td class="fw-bold text-dark"
+                            th:text="${#numbers.formatDecimal(p.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</td>
+                        <td>
+                            <span th:if="${p.stock > 0}" class="text-success fw-bold small">
+                                <i class="bi bi-check-circle-fill me-1"></i>Sẵn hàng (<span th:text="${p.stock}"></span>)
+                            </span>
+                            <span th:if="${p.stock == null || p.stock == 0}" class="text-danger fw-bold small">
+                                <i class="bi bi-x-circle-fill me-1"></i>Hết hàng
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-success me-1"
+                                    th:attr="onclick=|openImportModal('${p.id}', '${p.name}')|"
+                                    title="Nhập thêm hàng">
+                                <i class="bi bi-box-seam-fill"></i>
+                            </button>
+
+                            <button class="btn btn-sm btn-light text-primary me-1"
+                                    th:attr="onclick=|openEditModal('${p.id}', '${p.name}', '${p.price}', '${p.brand}',
+                                    '${p.category != null ? p.category.id : ''}', '${p.imageUrl}', '${p.description}',
+                                    '${p.code}', '${p.machineType}', '${p.glassMaterial}', '${p.diameter}', '${p.waterResistance}')|"
+                                    title="Chỉnh sửa">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+
+                            <a th:href="@{/admin/products/delete/{id}(id=${p.id})}"
+                               class="btn btn-sm btn-light text-danger"
+                               onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');"
+                               title="Xóa">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+</div>
+
+<div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl"> <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold" id="productModalLabel">Thông tin sản phẩm</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+            <form th:action="@{/admin/products/save}" method="post" th:object="${product}" enctype="multipart/form-data">
+                <input type="hidden" id="p_id" th:field="*{id}">
+
+                <input type="hidden" id="p_current_image" th:field="*{imageUrl}">
+
+                <div class="row g-4">
+                    <div class="col-lg-6 border-end">
+                        <h6 class="text-primary fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Thông tin chung</h6>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-muted">Tên sản phẩm</label>
+                                <input type="text" id="p_name" th:field="*{name}" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Danh mục</label>
+                                <select id="p_category" th:field="*{category.id}" class="form-select">
+                                    <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Giá bán (VNĐ)</label>
+                                <input type="number" id="p_price" th:field="*{price}" class="form-control" required>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-muted">Hình ảnh</label>
+                                <input type="file" name="imageFile" class="form-control" accept="image/*" onchange="previewImage(this)">
+
+                                <div class="mt-2 text-center border rounded-3 bg-white p-2 position-relative" style="min-height: 120px;">
+                                    <img id="preview-img" src="" style="max-height: 150px; display: none;" class="rounded">
+                                    <p id="no-img-text" class="text-muted small position-absolute top-50 start-50 translate-middle">Chưa chọn ảnh</p>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-muted">Mô tả ngắn</label>
+                                <textarea id="p_desc" th:field="*{description}" class="form-control" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 bg-light bg-opacity-50 rounded-3 p-3">
+                        <h6 class="text-success fw-bold mb-3"><i class="bi bi-gear-wide-connected me-2"></i>Thông số kỹ thuật</h6>
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-muted">Thương hiệu</label>
+                                <input type="text" id="p_brand" th:field="*{brand}" class="form-control" placeholder="VD: Rolex">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Mã sản phẩm</label>
+                                <input type="text" id="p_code" th:field="*{code}" class="form-control" placeholder="VD: WS-001">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Loại máy</label>
+                                <input type="text" id="p_machine" th:field="*{machineType}" class="form-control" placeholder="VD: Automatic">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Chất liệu kính</label>
+                                <input type="text" id="p_glass" th:field="*{glassMaterial}" class="form-control" placeholder="VD: Sapphire">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Đường kính</label>
+                                <input type="text" id="p_diameter" th:field="*{diameter}" class="form-control" placeholder="VD: 41mm">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Độ chịu nước</label>
+                                <input type="text" id="p_water" th:field="*{waterResistance}" class="form-control" placeholder="VD: 30 ATM">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary rounded-pill fw-bold py-2 shadow-sm">
+                        <i class="bi bi-check2-circle me-2"></i>Lưu thông tin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+</div>
+
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0 bg-success bg-opacity-10">
+                <h6 class="modal-title fw-bold text-success"><i class="bi bi-box-seam me-2"></i>Nhập kho</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form th:action="@{/admin/products/import-stock}" method="post">
+                    <input type="hidden" name="id" id="import_id">
+
+                    <div class="mb-3 text-center">
+                        <p class="small text-muted mb-1">Sản phẩm:</p>
+                        <h6 class="fw-bold" id="import_name">Tên SP</h6>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Số lượng nhập thêm</label>
+                        <input type="number" name="quantity" class="form-control form-control-lg text-center fw-bold text-success"
+                               value="1" min="1" required>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success rounded-pill fw-bold">Xác nhận nhập</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // 1. Hàm hiển thị ảnh xem trước khi chọn file
+    function previewImage(input) {
+        var preview = document.getElementById('preview-img');
+        var noText = document.getElementById('no-img-text');
+
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'inline-block';
+                noText.style.display = 'none';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // 2. Hàm xóa form để Thêm mới
+    function clearForm() {
+        document.getElementById('productModalLabel').innerText = 'Thêm mới sản phẩm';
+        document.getElementById('p_id').value = '';
+
+        // Reset các input text
+        const ids = ['p_name', 'p_price', 'p_brand', 'p_desc', 'p_code', 'p_machine', 'p_glass', 'p_diameter', 'p_water'];
+        ids.forEach(id => {
+            if(document.getElementById(id)) document.getElementById(id).value = '';
+        });
+
+        // Reset phần ảnh
+        document.getElementById('p_current_image').value = '';
+        document.getElementById('preview-img').style.display = 'none';
+        document.getElementById('no-img-text').style.display = 'block';
+    }
+
+    // 3. Hàm điền dữ liệu vào form khi bấm Sửa (Nhận đủ tham số mới)
+    function openEditModal(id, name, price, brand, catId, img, desc, code, machine, glass, diameter, water) {
+        var myModal = new bootstrap.Modal(document.getElementById('productModal'));
+        myModal.show();
+
+        document.getElementById('productModalLabel').innerText = 'Cập nhật sản phẩm';
+        document.getElementById('p_id').value = id;
+        document.getElementById('p_name').value = name;
+        document.getElementById('p_price').value = price;
+        document.getElementById('p_brand').value = (brand === 'null') ? '' : brand;
+        document.getElementById('p_category').value = catId;
+        document.getElementById('p_desc').value = (desc === 'null') ? '' : desc;
+
+        // Điền thông số kỹ thuật (Check null để không hiện chữ "null")
+        document.getElementById('p_code').value = (code === 'null') ? '' : code;
+        document.getElementById('p_machine').value = (machine === 'null') ? '' : machine;
+        document.getElementById('p_glass').value = (glass === 'null') ? '' : glass;
+        document.getElementById('p_diameter').value = (diameter === 'null') ? '' : diameter;
+        document.getElementById('p_water').value = (water === 'null') ? '' : water;
+
+        // Xử lý hiển thị ảnh cũ
+        document.getElementById('p_current_image').value = (img === 'null') ? '' : img;
+
+        if (img && img !== 'null') {
+            let preview = document.getElementById('preview-img');
+            let noText = document.getElementById('no-img-text');
+
+            // Logic đường dẫn ảnh: Nếu là link mạng thì giữ nguyên, nếu là file thì thêm /images/
+            if(img.startsWith('http')) {
+                preview.src = img;
+            } else {
+                preview.src = '/images/' + img;
+            }
+
+            preview.style.display = 'inline-block';
+            noText.style.display = 'none';
+        } else {
+            document.getElementById('preview-img').style.display = 'none';
+            document.getElementById('no-img-text').style.display = 'block';
+        }
+    }
+
+    // 4. Hàm mở modal Nhập kho
+    function openImportModal(id, name) {
+        var myModal = new bootstrap.Modal(document.getElementById('importModal'));
+        myModal.show();
+        document.getElementById('import_id').value = id;
+        document.getElementById('import_name').innerText = name;
+    }
+</script>
+
+</body>
+</html>

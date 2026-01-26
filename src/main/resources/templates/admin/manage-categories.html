@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head}"></head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/header :: admin-sidebar}"></div>
+
+<div style="margin-left: 280px;">
+    <div class="container-fluid p-4">
+        <h3 class="fw-bold mb-4 text-dark">Quản lý danh mục</h3>
+
+        <div th:if="${param.error}" class="alert alert-danger shadow-sm rounded-3 border-0 mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Không thể xóa danh mục này vì đang có sản phẩm bên trong!
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 20px; z-index: 1;">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h6 class="fw-bold mb-0 text-primary">
+                            <i th:class="${category.id == null ? 'bi bi-plus-circle' : 'bi bi-pencil-square'} + ' me-2'"></i>
+                            <span th:text="${category.id == null ? 'Thêm mới danh mục' : 'Cập nhật danh mục'}"></span>
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="@{/admin/categories/save}" method="post" th:object="${category}">
+
+                            <input type="hidden" th:field="*{id}">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">Tên danh mục</label>
+                                <input type="text" th:field="*{name}"
+                                       class="form-control bg-light border-0 py-2"
+                                       placeholder="Ví dụ: Đồng hồ Nam" required>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary rounded-pill fw-bold shadow-sm">
+                                    <i class="bi bi-save me-2"></i>Lưu lại
+                                </button>
+
+                                <a th:href="@{/admin/manage-categories}"
+                                   class="btn btn-light rounded-pill text-muted"
+                                   th:if="*{id != null}">
+                                    <i class="bi bi-x-circle me-1"></i>Hủy bỏ
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-body p-0">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-secondary">
+                            <tr>
+                                <th class="ps-4 border-0">ID</th>
+                                <th class="border-0">Tên danh mục</th>
+                                <th class="border-0 text-center">Số sản phẩm</th>
+                                <th class="text-end pe-4 border-0">Hành động</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="cat : ${categories}">
+                                <td class="ps-4 fw-bold text-muted" th:text="'#' + ${cat.id}">#1</td>
+                                <td class="fw-bold text-dark" th:text="${cat.name}">Rolex</td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">
+                                        <span th:text="${cat.products != null ? cat.products.size() : 0}">0</span> SP
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a th:href="@{/admin/manage-categories(id=${cat.id})}"
+                                       class="btn btn-sm btn-light text-warning shadow-sm me-1"
+                                       title="Sửa">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+
+                                    <a th:href="@{/admin/categories/delete/{id}(id=${cat.id})}"
+                                       class="btn btn-sm btn-light text-danger shadow-sm"
+                                       onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');"
+                                       title="Xóa">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(categories)}">
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Chưa có danh mục nào.
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
