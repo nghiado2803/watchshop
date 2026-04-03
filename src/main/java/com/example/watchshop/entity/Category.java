@@ -19,6 +19,6 @@ public class Category {
 
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     @ToString.Exclude
-    @JsonIgnore // <--- THÊM DÒNG NÀY: Ngăn không cho Jackson load danh sách SP khi chat
+    @JsonIgnore
     private List<Product> products;
 }
