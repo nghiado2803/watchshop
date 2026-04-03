@@ -19,7 +19,6 @@ import java.util.Locale;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    // --- 1. Cấu hình Đa ngôn ngữ (Locale) ---
     @Bean
     public LocaleResolver localeResolver() {
         CookieLocaleResolver resolver = new CookieLocaleResolver("lang");
@@ -40,29 +39,27 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(localeChangeInterceptor());
     }
 
-    // --- 2. Cấu hình đường dẫn hiển thị ảnh ---
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Map đường dẫn "/images/**" trên trình duyệt -> vào thư mục "uploads" thực tế trên máy
         String uploadPath = Paths.get("uploads").toFile().getAbsolutePath();
 
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("file:/" + uploadPath + "/");
+
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:/" + uploadPath + "/");
     }
 
-    // --- 3. [FIX LỖI QUAN TRỌNG] Cấu hình Tomcat bỏ giới hạn Upload ---
-    // Đoạn này xử lý lỗi: FileCountLimitExceededException
     @Bean
     public WebServerFactoryCustomizer<TomcatServletWebServerFactory> tomcatCustomizer() {
         return factory -> factory.addConnectorCustomizers((Connector connector) -> {
-            // Cho phép upload số lượng file không giới hạn (-1) thay vì giới hạn mặc định
             connector.setProperty("maxParameterCount", "-1");
 
-            // Cho phép dung lượng file lớn (Ví dụ: 100MB = 104857600 bytes)
             connector.setProperty("maxPostSize", "104857600");
 
-            // Cho phép "nuốt" dữ liệu lớn nếu upload bị ngắt giữa chừng
             connector.setProperty("maxSwallowSize", "-1");
         });
     }
+
 }
