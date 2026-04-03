@@ -24,12 +24,19 @@ public class User {
     private String phoneNumber;
 
     private String address;
-    private String role; // ROLE_ADMIN, ROLE_USER
+    private String role;
     private boolean enabled;
 
-    @JsonIgnore // <--- QUAN TRỌNG: Không lộ mật khẩu ra JSON
+    @JsonIgnore
     private String password;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+
+
+    @Column(name = "verification_code")
+    private String verificationCode;
+
+    @Column(name = "otp_expiry")
+    private LocalDateTime otpExpiry;
 }
