@@ -15,7 +15,7 @@ public class ChatMessage {
 
     @ManyToOne
     @JoinColumn(name = "session_id")
-    @JsonBackReference // <--- QUAN TRỌNG: Phía con ngắt tham chiếu ngược về cha để tránh lặp JSON
+    @JsonBackReference
     private ChatSession chatSession;
 
     @ManyToOne
