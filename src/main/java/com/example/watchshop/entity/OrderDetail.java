@@ -12,7 +12,7 @@ public class OrderDetail {
     private Long id;
 
     private Double price;
-    private Integer quantity; // Số lượng mua
+    private Integer quantity;
 
     @ManyToOne
     @JoinColumn(name = "order_id")
@@ -20,5 +20,5 @@ public class OrderDetail {
 
     @ManyToOne
     @JoinColumn(name = "product_id")
-    private Product product; // Sản phẩm cần trừ kho
+    private Product product;
 }
