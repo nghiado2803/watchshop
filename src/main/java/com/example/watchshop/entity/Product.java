@@ -1,7 +1,11 @@
 package com.example.watchshop.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Products")
@@ -13,7 +17,13 @@ public class Product {
 
     private String name;
     private Double price;
+
+    // Ảnh đại diện (ảnh đầu tiên)
     private String imageUrl;
+
+    // Lưu toàn bộ ảnh: "image1.jpg,image2.jpg,image3.jpg"
+    @Column(name = "image_urls", columnDefinition = "NVARCHAR(MAX)")
+    private String imageUrls;
 
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
@@ -22,7 +32,6 @@ public class Product {
     private Integer stock;
     private Integer discount;
 
-    // --- CÁC CỘT MỚI ---
     @Column(name = "machine_type")
     private String machineType;
 
@@ -34,7 +43,6 @@ public class Product {
     @Column(name = "water_resistance")
     private String waterResistance;
 
-    // ===> BẠN ĐANG THIẾU DÒNG NÀY <===
     private String code;
 
     @Column(name = "review_count")
@@ -47,9 +55,21 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    // --- THÊM GETTER THỦ CÔNG CHO CHẮC ĂN ---
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
+    public String getCode() {
+        return code;
+    }
 
-    // (Lombok @Data sẽ lo các field còn lại, nhưng field mới thêm cứ viết rõ ra cho an toàn)
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    @Column(name = "discount_start")
+    @DateTimeFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+    private LocalDateTime discountStart;
+
+    @Column(name = "discount_end")
+    @DateTimeFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+    private LocalDateTime discountEnd;
 }
