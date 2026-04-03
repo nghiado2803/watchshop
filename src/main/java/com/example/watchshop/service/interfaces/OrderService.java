@@ -8,6 +8,6 @@ import java.util.Optional;
 public interface OrderService {
     List<Order> findAll();
     Optional<Order> findById(Long id);
-    Order save(Order order, List<CartItem> items); // Đặt hàng
-    List<Order> findOrdersByUserId(Long userId); // Lịch sử mua hàng
+    Order save(Order order, List<CartItem> items);
+    List<Order> findOrdersByUserId(Long userId);
 }
