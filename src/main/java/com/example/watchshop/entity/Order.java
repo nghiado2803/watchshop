@@ -34,19 +34,23 @@ public class Order {
     @Column(name = "total_price")
     private Double totalPrice;
 
-    private String status; // "Chờ xác nhận", "Đang giao hàng", "Hoàn thành", "Đã hủy"
+    private String status;
 
     @Column(name = "order_date")
     private LocalDateTime orderDate = LocalDateTime.now();
 
-    // Quan hệ này BẮT BUỘC PHẢI CÓ để lấy danh sách sản phẩm đi trừ kho
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderDetail> orderDetails;
 
     // Các trường thanh toán
     @Column(name = "payment_method")
-    private String paymentMethod; // "Tiền mặt", "COD", "BANKING"...
+    private String paymentMethod;
 
     @Column(name = "payment_status")
-    private String paymentStatus; // "Chưa thanh toán", "Đã thanh toán"
+    private String paymentStatus;
+
+    // CHỈ THÊM DÒNG NÀY ĐỂ TÍCH HỢP PAYOS
+    @Column(name = "order_code_payos")
+    private Long orderCodePayos;
+
 }
