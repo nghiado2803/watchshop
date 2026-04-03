@@ -6,5 +6,5 @@ import java.util.List;
 
 @Repository
 public interface OrderDetailRepository extends JpaRepository<OrderDetail, Long> {
-    List<OrderDetail> findByOrderId(Long orderId); // Để sau này xem chi tiết đơn hàng
+    List<OrderDetail> findByOrderId(Long orderId);
 }
