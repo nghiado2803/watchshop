@@ -10,10 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    // Tìm user để login
     Optional<User> findByEmail(String email);
 
-    // Kiểm tra email đã tồn tại chưa (khi đăng ký)
     boolean existsByEmail(String email);
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
