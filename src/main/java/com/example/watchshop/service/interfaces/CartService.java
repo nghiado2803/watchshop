@@ -9,6 +9,6 @@ public interface CartService {
     void update(Long productId, int quantity);
     void clear();
     Collection<CartItem> getCartItems(); // Lấy danh sách để hiển thị
-    double getTotalAmount(); // Tính tổng tiền cả giỏ
-    int getCount(); // Đếm tổng số lượng sản phẩm
+    double getTotalAmount();
+    int getCount();
 }
