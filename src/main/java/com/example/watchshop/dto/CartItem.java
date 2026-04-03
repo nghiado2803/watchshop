@@ -14,7 +14,6 @@ public class CartItem {
     private int quantity;
     private String imageUrl;
 
-    // Logic tính thành tiền của item này (Giá * Số lượng)
     public Double getTotalPrice() {
         return price * quantity;
     }
