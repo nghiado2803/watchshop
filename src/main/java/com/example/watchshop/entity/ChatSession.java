@@ -16,7 +16,7 @@ public class ChatSession {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user; // Khách hàng
+    private User user;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -26,6 +26,6 @@ public class ChatSession {
 
     @OneToMany(mappedBy = "chatSession", cascade = CascadeType.ALL)
     @OrderBy("createdAt ASC")
-    @JsonManagedReference // <--- QUAN TRỌNG: Phía cha giữ tham chiếu quản lý
+    @JsonManagedReference
     private List<ChatMessage> messages;
 }
