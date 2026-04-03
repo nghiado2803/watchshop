@@ -21,8 +21,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User save(User user) {
-        // Lưu ý: Thực tế chỗ này cần mã hóa mật khẩu trước khi lưu (passwordEncoder.encode(...))
-        // Nhưng tạm thời để nguyên để test luồng chạy trước.
+
         return userRepository.save(user);
     }
 
