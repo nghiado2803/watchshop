@@ -3,8 +3,10 @@ package com.example.watchshop.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -12,6 +14,12 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -20,52 +28,70 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
 
+    // --- TIÊM HANDLER XỬ LÝ GOOGLE LOGIN VÀO ĐÂY ---
+    private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // --- FIX LỖI Ở BEAN NÀY ---
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        // 1. Tạo đối tượng bằng constructor rỗng
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-
-        // 2. Set Service để lấy thông tin user (Load user by username)
         authProvider.setUserDetailsService(userDetailsService);
-
-        // 3. Set Encoder để mã hóa và so sánh mật khẩu
         authProvider.setPasswordEncoder(passwordEncoder());
-
         return authProvider;
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5174"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(req -> req
-                        // Cho phép truy cập file tĩnh (ảnh, css, js) để không bị lỗi giao diện
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
 
-                        // Phân quyền cho Admin (Lưu ý: trong DB role phải là "ADMIN" hoặc "ROLE_ADMIN")
+                        .requestMatchers("/api/products/**", "/api/auth/**", "/api/orders/**", "/api/profile/**").permitAll()
+
+                        // Phân quyền Admin
                         .requestMatchers("/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
 
-                        // Các trang cần đăng nhập mới vào được
-                        .requestMatchers("/checkout/**", "/cart/**", "/orders/**", "/account/profile").authenticated()
+                        // Các API cũ của Thymeleaf yêu cầu đăng nhập (Giữ nguyên)
+                        .requestMatchers("/api/chat/**", "/checkout/**", "/cart/**").authenticated()
 
-                        // Còn lại cho phép truy cập tất cả
                         .anyRequest().permitAll()
                 )
+                // Giữ nguyên form login cho trang Admin/Web cũ
                 .formLogin(form -> form
                         .loginPage("/account/login")
-                        .loginProcessingUrl("/account/login") // Link submit form login
-                        .usernameParameter("email")           // Tên ô input email
-                        .passwordParameter("password")        // Tên ô input password
-                        .defaultSuccessUrl("/", false)        // false: login xong quay lại trang đang xem dở
+                        .loginProcessingUrl("/account/login")
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .defaultSuccessUrl("/", false)
                         .failureUrl("/account/login?error=true")
                         .permitAll()
                 )
+
+                .oauth2Login(oauth2 -> oauth2
+                        // Khi Google trả về kết quả thành công, chạy vào Handler mình vừa viết
+                        .successHandler(oauth2LoginSuccessHandler)
+                )
+
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/")
@@ -73,5 +99,10 @@ public class SecurityConfig {
                 );
 
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 }
