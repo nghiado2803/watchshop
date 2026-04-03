@@ -34,19 +34,16 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    @Transactional // Quan trọng: Để đảm bảo lưu Order xong mới lưu Detail, lỗi thì rollback hết
+    @Transactional
     public Order save(Order order, List<CartItem> items) {
-        // 1. Lưu Order cha trước
         Order savedOrder = orderRepository.save(order);
 
-        // 2. Lặp qua giỏ hàng để lưu từng món vào OrderDetails
         for (CartItem item : items) {
             OrderDetail detail = new OrderDetail();
             detail.setOrder(savedOrder);
             detail.setPrice(item.getPrice());
             detail.setQuantity(item.getQuantity());
 
-            // Lấy Product từ DB để gán mối quan hệ (tránh lỗi Hibernate)
             Product product = productRepository.findById(item.getProductId()).orElse(null);
             detail.setProduct(product);
 
