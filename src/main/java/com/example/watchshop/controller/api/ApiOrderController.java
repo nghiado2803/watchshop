@@ -33,7 +33,6 @@ public class ApiOrderController {
     @GetMapping("/my-orders")
     @Transactional(readOnly = true)
     public ResponseEntity<?> getMyOrders(@RequestParam(required = false) String email, Authentication auth) {
-        // ĐÃ SỬA LỖI: Ưu tiên email từ frontend truyền lên để tránh dính ID của Google
         String targetEmail = (email != null && !email.isEmpty()) ? email : (auth != null ? auth.getName() : null);
 
         if (targetEmail == null || targetEmail.trim().isEmpty())
@@ -56,14 +55,12 @@ public class ApiOrderController {
                 for (OrderDetail od : o.getOrderDetails()) {
                     Map<String, Object> d = new HashMap<>();
                     Product p = od.getProduct();
-                    // BẮT BUỘC PHẢI CÓ productId ĐỂ VUE GỬI ĐÁNH GIÁ
                     d.put("productId", p != null ? p.getId() : null);
                     d.put("name", p != null ? p.getName() : "Sản phẩm đã bị xóa");
                     d.put("imageUrl", p != null ? p.getImageUrl() : "");
                     d.put("quantity", od.getQuantity());
                     d.put("price", od.getPrice());
 
-                    // Logic tính giảm giá lịch sử
                     if (p != null && p.getPrice() > od.getPrice()) {
                         double phanTram = ((p.getPrice() - od.getPrice()) / p.getPrice()) * 100;
                         d.put("discount", (int) Math.round(phanTram));
@@ -80,27 +77,19 @@ public class ApiOrderController {
         return ResponseEntity.ok(result);
     }
 
-
     @GetMapping("/user-info")
     @Transactional(readOnly = true)
     public ResponseEntity<?> getUserInfoForCheckout(@RequestParam(required = false) String email, Authentication auth) {
         String targetEmail = (email != null && !email.isEmpty()) ? email : (auth != null ? auth.getName() : null);
-
-        if (targetEmail == null || targetEmail.trim().isEmpty()) {
-            return ResponseEntity.ok(new HashMap<>());
-        }
+        if (targetEmail == null || targetEmail.trim().isEmpty()) return ResponseEntity.ok(new HashMap<>());
 
         User user = userRepository.findByEmail(targetEmail.trim().toLowerCase()).orElse(null);
-
-        if (user == null) {
-            return ResponseEntity.ok(new HashMap<>());
-        }
+        if (user == null) return ResponseEntity.ok(new HashMap<>());
 
         Map<String, String> info = new HashMap<>();
         info.put("fullName", user.getFullName());
         info.put("phoneNumber", user.getPhoneNumber());
         info.put("address", user.getAddress());
-
         return ResponseEntity.ok(info);
     }
 
@@ -109,16 +98,12 @@ public class ApiOrderController {
     public ResponseEntity<?> placeOrder(@RequestBody CheckoutRequest payload, @RequestParam(required = false) String email, Authentication auth) {
         try {
             Order order = new Order();
-
-            // ĐÃ SỬA LỖI: Ưu tiên lấy email truyền lên để gắn đúng vào User
             String targetEmail = (email != null && !email.isEmpty()) ? email : (auth != null ? auth.getName() : null);
 
             if (targetEmail != null && !targetEmail.trim().isEmpty()) {
-                // Chuẩn hóa email
                 String standardizedEmail = targetEmail.trim().toLowerCase();
                 User user = userRepository.findByEmail(standardizedEmail).orElse(null);
 
-                // Tự động tạo user nếu chưa tồn tại
                 if (user == null) {
                     user = new User();
                     user.setEmail(standardizedEmail);
@@ -129,11 +114,8 @@ public class ApiOrderController {
                     user.setEnabled(true);
                     user.setCreatedAt(LocalDateTime.now());
                     user.setPassword("DUMMY_GOOGLE_PASSWORD");
-                    // Lưu thẳng user mới này vào Database
                     user = userRepository.save(user);
                 }
-
-                // Lúc này biến 'user' chắc chắn có dữ liệu (không bao giờ bị null nữa)
                 order.setUser(user);
             }
 
@@ -162,9 +144,12 @@ public class ApiOrderController {
 
                     total += (item.getPrice() * item.getQuantity());
 
-                    int currentStock = p.getStock() != null ? p.getStock() : 0;
-                    p.setStock(Math.max(0, currentStock - item.getQuantity()));
-                    productRepository.save(p);
+                    // CHỈ TRỪ KHO KHI COD / TIỀN MẶT
+                    if ("COD".equalsIgnoreCase(payload.getPaymentMethod()) || "Tiền mặt".equalsIgnoreCase(payload.getPaymentMethod())) {
+                        int currentStock = p.getStock() != null ? p.getStock() : 0;
+                        p.setStock(Math.max(0, currentStock - item.getQuantity()));
+                        productRepository.save(p);
+                    }
                 }
             }
 
@@ -177,13 +162,52 @@ public class ApiOrderController {
         }
     }
 
+    @PostMapping("/{id}/cancel")
+    @Transactional
+    public ResponseEntity<?> cancelOrder(@PathVariable Long id) {
+        Order order = orderRepository.findById(id).orElse(null);
+        if (order == null) {
+            order = orderRepository.findByOrderCodePayos(id).orElse(null);
+        }
+
+        if (order == null) return ResponseEntity.status(404).body(Map.of("error", "Không tìm thấy đơn hàng"));
+
+        List<String> bankingMethods = Arrays.asList("Chuyển khoản", "BANK_TRANSFER", "BANKING");
+        boolean isBanking = bankingMethods.contains(order.getPaymentMethod());
+        boolean isPaid = "Đã thanh toán".equals(order.getPaymentStatus());
+
+        // LOGIC CHUẨN MỚI NHẤT
+        // 1. NẾU LÀ ĐƠN BANKING MÀ CHƯA THANH TOÁN (Tức là khách quét QR xong bấm Hủy)
+        // -> Đây là đơn rác, Xóa sạch khỏi DB, không cộng kho vì lúc tạo chưa trừ kho.
+        if (isBanking && !isPaid) {
+            orderDetailRepository.deleteAll(order.getOrderDetails());
+            orderRepository.delete(order);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Đã xóa đơn hàng rác từ PayOS",
+                    "paymentMethod", order.getPaymentMethod(),
+                    "paymentStatus", order.getPaymentStatus()
+            ));
+        }
+
+        // 2. NẾU LÀ ĐƠN COD HOẶC ĐƠN BANKING MÀ ĐÃ THANH TOÁN THÀNH CÔNG
+        // -> Đơn này hợp lệ, đổi trạng thái Đã Hủy, CỘNG DỒN VÀO KHO (vì COD trừ lúc tạo, Banking trừ lúc Webhook)
+        if (!"Đã hủy".equals(order.getStatus())) {
+            order.setStatus("Đã hủy");
+            updateProductStock(order, 1);
+            orderRepository.save(order);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Đã hủy đơn hàng thành công",
+                "paymentMethod", order.getPaymentMethod(),
+                "paymentStatus", order.getPaymentStatus()
+        ));
+    }
+
     @GetMapping("/detail/{id}")
     @Transactional(readOnly = true)
     public ResponseEntity<?> getOrderDetail(@PathVariable Long id, @RequestParam(required = false) String email, Authentication auth) {
-
-        // ĐÃ SỬA LỖI: Ưu tiên email từ frontend truyền lên
         String targetEmail = (email != null && !email.isEmpty()) ? email : (auth != null ? auth.getName() : null);
-
         if (targetEmail == null || targetEmail.trim().isEmpty())
             return ResponseEntity.status(401).body(Map.of("error", "Vui lòng đăng nhập"));
 
@@ -207,9 +231,7 @@ public class ApiOrderController {
             for (OrderDetail od : order.getOrderDetails()) {
                 Map<String, Object> item = new HashMap<>();
                 Product p = od.getProduct();
-
                 item.put("productId", p != null ? p.getId() : null);
-
                 item.put("productName", p != null ? p.getName() : "Sản phẩm đã bị xóa");
                 item.put("imageUrl", p != null ? p.getImageUrl() : "");
                 item.put("quantity", od.getQuantity());
@@ -221,7 +243,6 @@ public class ApiOrderController {
                 } else {
                     item.put("discount", 0);
                 }
-
                 orderDetailsList.add(item);
             }
         }
@@ -237,20 +258,88 @@ public class ApiOrderController {
     }
 
     @PostMapping("/payos-webhook")
+    @Transactional
     public ResponseEntity<?> handlePayosWebhook(@RequestBody com.fasterxml.jackson.databind.JsonNode body) {
         try {
             long orderCode = body.get("data").get("orderCode").asLong();
             Order order = orderRepository.findByOrderCodePayos(orderCode).orElse(null);
-            if (order != null) {
+
+            if (order != null && !"Đã thanh toán".equals(order.getPaymentStatus())) {
                 order.setPaymentStatus("Đã thanh toán");
                 order.setStatus("Đang chuẩn bị hàng");
+                // TRỪ KHO KHI BANKING THANH TOÁN THÀNH CÔNG
+                updateProductStock(order, -1);
                 orderRepository.save(order);
-                System.out.println("[PAYOS] Thanh toán thành công đơn: " + orderCode);
             }
         } catch (Exception e) {
             System.err.println("[PAYOS Error]: " + e.getMessage());
         }
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/orders/update-status")
+    @Transactional
+    public ResponseEntity<?> updateOrderStatus(@RequestBody Map<String, Object> payload) {
+        Long orderId = Long.valueOf(payload.get("orderId").toString());
+        String status = payload.get("status").toString();
+
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        String oldStatus = order.getStatus();
+        if (oldStatus == null || "null".equalsIgnoreCase(oldStatus.trim())) {
+            oldStatus = "Chờ xác nhận";
+        }
+
+        if (!"Đã hủy".equals(oldStatus) && "Đã hủy".equals(status)) {
+            boolean isCOD = "COD".equalsIgnoreCase(order.getPaymentMethod()) || "Tiền mặt".equalsIgnoreCase(order.getPaymentMethod());
+            boolean isPaidBanking = "BANKING".equalsIgnoreCase(order.getPaymentMethod()) && "Đã thanh toán".equals(order.getPaymentStatus());
+
+            if (isCOD || isPaidBanking) {
+                updateProductStock(order, 1);
+            }
+        }
+
+        order.setStatus(status);
+
+        if ("Hoàn thành".equals(status)) {
+            String method = order.getPaymentMethod();
+            if ("Tiền mặt".equals(method) || "COD".equals(method)) {
+                order.setPaymentStatus("Đã thanh toán");
+            }
+        }
+
+        orderRepository.save(order);
+        return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái thành công"));
+    }
+
+    private void updateProductStock(Order order, int multiplier) {
+        if (order.getOrderDetails() != null) {
+            for (OrderDetail detail : order.getOrderDetails()) {
+                Product product = detail.getProduct();
+                if (product != null) {
+                    int quantity = detail.getQuantity();
+                    int currentStock = product.getStock() != null ? product.getStock() : 0;
+                    int newStock = currentStock + (quantity * multiplier);
+                    if (newStock < 0) newStock = 0;
+                    product.setStock(newStock);
+                    productRepository.save(product);
+                }
+            }
+        }
+    }
+
+    @PostMapping("/orders/confirm-payment")
+    public ResponseEntity<?> confirmPayment(@RequestBody Map<String, Object> payload) {
+        Long orderId = Long.valueOf(payload.get("orderId").toString());
+        Order order = orderRepository.findById(orderId).orElseThrow();
+
+        List<String> bankingMethods = Arrays.asList("Chuyển khoản", "BANK_TRANSFER", "BANKING");
+        if (bankingMethods.contains(order.getPaymentMethod())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Đơn hàng chuyển khoản không sử dụng chức năng thu tiền mặt."));
+        }
+
+        order.setPaymentStatus("Đã thanh toán");
+        orderRepository.save(order);
+        return ResponseEntity.ok(Map.of("message", "Đã xác nhận thu tiền mặt"));
     }
 
     @Data
