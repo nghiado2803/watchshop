@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -126,8 +127,6 @@ public class ApiAdminController {
             m.put("brand", p.getBrand());
             m.put("imageUrl", p.getImageUrl());
 
-            // --- XỬ LÝ ALBUM ẢNH CHO FRONTEND ---
-            // Biến chuỗi "anh1.jpg,anh2.jpg" thành mảng ["anh1.jpg", "anh2.jpg"]
             if (p.getImageUrls() != null && !p.getImageUrls().isEmpty()) {
                 m.put("imageUrls", p.getImageUrls().split(","));
             } else {
@@ -158,14 +157,12 @@ public class ApiAdminController {
         Path uploadPath = Paths.get("uploads");
         if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
 
-        // 1. Xử lý ảnh đại diện (Single)
         if (imageFile != null && !imageFile.isEmpty()) {
             String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
             Files.copy(imageFile.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
             product.setImageUrl(fileName);
         }
 
-        // 2. Xử lý Album ảnh (Multiple)
         if (albumFiles != null && !albumFiles.isEmpty()) {
             List<String> fileNames = new ArrayList<>();
             for (MultipartFile file : albumFiles) {
@@ -175,22 +172,17 @@ public class ApiAdminController {
                     fileNames.add(fileName);
                 }
             }
-            // Nối các tên file bằng dấu phẩy để lưu vào NVARCHAR(MAX)
             if (!fileNames.isEmpty()) {
                 product.setImageUrls(String.join(",", fileNames));
             }
         }
 
-        // 3. Logic giữ dữ liệu cũ khi Update
         if (product.getId() != null) {
             Product oldProduct = productService.findById(product.getId()).orElse(null);
             if (oldProduct != null) {
-                // Giữ lại ảnh và tồn kho nếu không có thay đổi
                 if (product.getImageUrl() == null) product.setImageUrl(oldProduct.getImageUrl());
                 if (product.getImageUrls() == null) product.setImageUrls(oldProduct.getImageUrls());
                 if (product.getStock() == null) product.setStock(oldProduct.getStock());
-
-                // 👇 BẢO VỆ CÁC THÔNG SỐ KỸ THUẬT (Chống mất dữ liệu khi Set Khuyến Mãi) 👇
                 if (product.getMachineType() == null) product.setMachineType(oldProduct.getMachineType());
                 if (product.getGlassMaterial() == null) product.setGlassMaterial(oldProduct.getGlassMaterial());
                 if (product.getDiameter() == null) product.setDiameter(oldProduct.getDiameter());
@@ -198,7 +190,7 @@ public class ApiAdminController {
                 if (product.getDescription() == null) product.setDescription(oldProduct.getDescription());
                 if (product.getBrand() == null) product.setBrand(oldProduct.getBrand());
                 if (product.getCode() == null) product.setCode(oldProduct.getCode());
-                if (product.getCategory() == null) product.setCategory(oldProduct.getCategory()); // Bảo vệ luôn cả Danh mục
+                if (product.getCategory() == null) product.setCategory(oldProduct.getCategory());
             }
         } else {
             if (product.getStock() == null) product.setStock(0);
@@ -251,7 +243,6 @@ public class ApiAdminController {
             m.put("paymentMethod", o.getPaymentMethod());
             m.put("paymentStatus", o.getPaymentStatus());
 
-            // 2. Duyệt chi tiết đơn hàng
             List<Map<String, Object>> details = new ArrayList<>();
             if (o.getOrderDetails() != null) {
                 for (OrderDetail od : o.getOrderDetails()) {
@@ -267,7 +258,6 @@ public class ApiAdminController {
                         double giaNiemYet = p.getPrice();
                         double giaThucTe = od.getPrice();
                         double phanTram = ((giaNiemYet - giaThucTe) / giaNiemYet) * 100;
-
                         d.put("discount", (int) Math.round(phanTram));
                     } else {
                         d.put("discount", 0);
@@ -284,7 +274,11 @@ public class ApiAdminController {
         return ResponseEntity.ok(orderList);
     }
 
+    // =========================================================
+    // ĐÃ SỬA LỖI: THÊM @Transactional VÀ FIX LOGIC CỘNG/TRỪ KHO
+    // =========================================================
     @PostMapping("/orders/update-status")
+    @Transactional
     public ResponseEntity<?> updateOrderStatus(@RequestBody Map<String, Object> payload) {
         Long orderId = Long.valueOf(payload.get("orderId").toString());
         String status = payload.get("status").toString();
@@ -296,12 +290,9 @@ public class ApiAdminController {
             oldStatus = "Chờ xác nhận";
         }
 
-        if ("Chờ xác nhận".equals(oldStatus) && ("Đang giao".equals(status) || "Hoàn thành".equals(status))) {
-            updateProductStock(order, -1);
-        }
-
-        if (("Đang giao".equals(oldStatus) || "Hoàn thành".equals(oldStatus)) && "Đã hủy".equals(status)) {
-            updateProductStock(order, 1);
+        // CHỈ CỘNG LẠI KHO KHI ADMIN CHUYỂN TRẠNG THÁI THÀNH "ĐÃ HỦY"
+        if (!"Đã hủy".equals(oldStatus) && "Đã hủy".equals(status)) {
+            updateProductStock(order, 1); // 1 = Cộng thêm vào kho
         }
 
         order.setStatus(status);
@@ -367,24 +358,19 @@ public class ApiAdminController {
     @PostMapping("/users/save")
     public ResponseEntity<?> saveUser(@RequestBody User user) {
         if (user.getId() != null) {
-            // TRƯỜNG HỢP CẬP NHẬT
             User oldUser = userRepository.findById(user.getId()).orElseThrow();
             user.setCreatedAt(oldUser.getCreatedAt());
 
-            // Nếu người dùng không nhập mật khẩu mới thì giữ lại mật khẩu cũ
             if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
                 user.setPassword(oldUser.getPassword());
             } else {
                 user.setPassword(passwordEncoder.encode(user.getPassword()));
             }
         } else {
-            // TRƯỜNG HỢP THÊM MỚI
             user.setCreatedAt(LocalDateTime.now());
             user.setEnabled(true);
 
-            // 👇 KIỂM TRA MẬT KHẨU THÊM MỚI 👇
             if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
-                // Nếu Admin quên nhập mật khẩu, gán mặc định là 123456
                 user.setPassword(passwordEncoder.encode("123456"));
             } else {
                 user.setPassword(passwordEncoder.encode(user.getPassword()));
